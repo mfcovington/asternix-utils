@@ -18,6 +18,7 @@ my $dir2    = $ARGV[1] // "test2";
 my $pattern = $ARGV[2] // "(\\.CR2)|(\\.JPG)\$";
 my $verbose = 1;
 
+verify_dirs( $dir1, $dir2 );
 my $files1 = get_files( $dir1, $pattern );
 my $files2 = get_files( $dir2, $pattern );
 
@@ -47,6 +48,10 @@ for my $file ( sort @all ) {
 say "$_: $counts{$_}" for sort keys %counts;
 
 exit;
+
+sub verify_dirs {
+    -d $_ or die "Directory '$_' does not exist.\n" for @_;
+}
 
 sub get_files {
     my ( $dir, $pattern ) = @_;
