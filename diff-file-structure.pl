@@ -18,38 +18,26 @@ my $dir2    = $ARGV[1] // "test2";
 my $pattern = $ARGV[2] // "(\\.CR2)|(\\.JPG)\$";
 my $verbose = 1;
 
-my %files1;
-my %files2;
+my $files1 = get_files( $dir1, $pattern );
+my $files2 = get_files( $dir2, $pattern );
 
-find sub {
-    die "Duplicate filename: '$_' at '$files1{$_} and $File::Find::name'\n"
-        if exists $files1{$_};
-    -f && m/$pattern/i && ( $files1{$_} = $File::Find::name );
-}, $dir1;
-
-find sub {
-    die "Duplicate filename: '$_' at '$files2{$_} and $File::Find::name'\n"
-        if exists $files2{$_};
-    -f && m/$pattern/i && ( $files2{$_} = $File::Find::name );
-}, $dir2;
-
-my @all = uniq keys %files1, keys %files2;
+my @all = uniq keys $files1, keys $files2;
 
 my %counts;
 
 for my $file ( sort @all ) {
     my $result;
-    if ( exists $files1{$file} && exists $files2{$file} ) {
+    if ( exists $$files1{$file} && exists $$files2{$file} ) {
         $counts{Both}++;
         next;
     }
-    elsif ( exists $files1{$file} ) {
+    elsif ( exists $$files1{$file} ) {
         $counts{"Only in $dir1"}++;
-        say "<< '$file' only in '$dir1' at '$files1{$file}'" if $verbose;
+        say "<< '$file' only in '$dir1' at '$$files1{$file}'" if $verbose;
     }
-    elsif ( exists $files2{$file} ) {
+    elsif ( exists $$files2{$file} ) {
         $counts{"Only in $dir2"}++;
-        say ">> '$file' only in '$dir2' at '$files2{$file}'" if $verbose;
+        say ">> '$file' only in '$dir2' at '$$files2{$file}'" if $verbose;
     }
     else {
         die "Something went wrong...\n";
@@ -58,3 +46,18 @@ for my $file ( sort @all ) {
 
 say "$_: $counts{$_}" for sort keys %counts;
 
+exit;
+
+sub get_files {
+    my ( $dir, $pattern ) = @_;
+
+    my %files;
+
+    find sub {
+        die "Duplicate filename: '$_' at '$files{$_} and $File::Find::name'\n"
+            if exists $files{$_};
+        -f && m/$pattern/i && ( $files{$_} = $File::Find::name );
+    }, $dir;
+
+    return \%files;
+}
