@@ -20,17 +20,15 @@ my $dir2    = $ARGV[1] // "test2";
 my $pattern = $ARGV[2] // "(\\.CR2)|(\\.JPG)\$";
 my $verbose = 1;
 
-compare_files( $dir1, $dir2, $pattern, $verbose );
+verify_dirs( $dir1, $dir2 );
+my $files1 = get_files( $dir1, $pattern );
+my $files2 = get_files( $dir2, $pattern );
+compare_files( $files1, $files2, $dir1, $dir2, $verbose );
 
 exit;
 
 sub compare_files {
-    my ( $dir1, $dir2, $pattern, $verbose ) = @_;
-
-    verify_dirs( $dir1, $dir2 );
-
-    my $files1 = get_files( $dir1, $pattern );
-    my $files2 = get_files( $dir2, $pattern );
+    my ( $files1, $files2, $dir1, $dir2, $verbose ) = @_;
 
     my @all = uniq keys $files1, keys $files2;
 
