@@ -10,6 +10,8 @@ use autodie;
 use feature 'say';
 use File::Find;
 use List::MoreUtils qw(uniq);
+use Digest::MD5 'md5_base64';
+use File::Slurp;
 
 # Adapted from: http://stackoverflow.com/a/15214549/996114
 
@@ -37,16 +39,18 @@ sub compare_files {
     for my $file ( sort @all ) {
         my $result;
         if ( exists $$files1{$file} && exists $$files2{$file} ) {
+            die md5_mismatch( $$files1{$file}{path}, $$files2{$file}{path} )
+                unless $$files1{$file}{digest} eq $$files2{$file}{digest};
             $counts{Both}++;
             next;
         }
         elsif ( exists $$files1{$file} ) {
             $counts{"Only in $dir1"}++;
-            say "<< '$file' only in '$dir1' at '$$files1{$file}'" if $verbose;
+            say "<< '$file' only in '$dir1' at '$$files1{$file}{path}'" if $verbose;
         }
         elsif ( exists $$files2{$file} ) {
             $counts{"Only in $dir2"}++;
-            say ">> '$file' only in '$dir2' at '$$files2{$file}'" if $verbose;
+            say ">> '$file' only in '$dir2' at '$$files2{$file}{path}'" if $verbose;
         }
         else {
             die "Something went wrong...\n";
@@ -54,6 +58,18 @@ sub compare_files {
     }
 
     say "$_: $counts{$_}" for sort keys %counts;
+}
+
+sub md5_mismatch {
+    my ( $path1, $path2 ) = @_;
+
+    my $error = <<EOF;
+File names match, but contents appear to be different:
+  << '$path1'
+  >> '$path2'
+EOF
+
+    return $error;
 }
 
 sub verify_dirs {
@@ -66,9 +82,12 @@ sub get_files {
     my %files;
 
     find sub {
-        die "Duplicate filename: '$_' at '$files{$_} and $File::Find::name'\n"
+        die "Duplicate filename: '$_' at '$files{$_}{path} and $File::Find::name'\n"
             if exists $files{$_};
-        -f && m/$pattern/i && ( $files{$_} = $File::Find::name );
+        -f
+            && m/$pattern/i
+            && ( $files{$_}{path}   = $File::Find::name )
+            && ( $files{$_}{digest} = md5_base64( read_file($_) ) );
     }, $dir;
 
     return \%files;
