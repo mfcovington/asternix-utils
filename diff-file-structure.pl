@@ -21,8 +21,8 @@ my $pattern = $ARGV[2] // "(\\.CR2)|(\\.JPG)\$";
 my $verbose = 1;
 
 verify_dirs( $dir1, $dir2 );
-my $files1 = get_files( $dir1, $pattern );
-my $files2 = get_files( $dir2, $pattern );
+my $files1 = get_files( $dir1, $pattern, $verbose );
+my $files2 = get_files( $dir2, $pattern, $verbose );
 compare_files( $files1, $files2, $dir1, $dir2, $verbose );
 
 exit;
@@ -32,9 +32,14 @@ sub verify_dirs {
 }
 
 sub get_files {
-    my ( $dir, $pattern ) = @_;
+    my ( $dir, $pattern, $verbose ) = @_;
 
     my %files;
+    my $count = 0;
+
+    select(STDERR);
+    $| = 1;
+    say "Finding files in '$dir'";
 
     find sub {
         die "Duplicate filename: '$_' at '$files{$_}{path} and $File::Find::name'\n"
@@ -43,7 +48,11 @@ sub get_files {
             && m/$pattern/i
             && ( $files{$_}{path}   = $File::Find::name )
             && ( $files{$_}{digest} = md5_base64( read_file($_) ) );
+        print "  $count files processed\r" if ++$count % 10_000 == 0;
     }, $dir;
+
+    say "";
+    select(STDOUT);
 
     return \%files;
 }
