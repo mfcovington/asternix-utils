@@ -27,6 +27,27 @@ compare_files( $files1, $files2, $dir1, $dir2, $verbose );
 
 exit;
 
+sub verify_dirs {
+    -d $_ or die "Directory '$_' does not exist.\n" for @_;
+}
+
+sub get_files {
+    my ( $dir, $pattern ) = @_;
+
+    my %files;
+
+    find sub {
+        die "Duplicate filename: '$_' at '$files{$_}{path} and $File::Find::name'\n"
+            if exists $files{$_};
+        -f
+            && m/$pattern/i
+            && ( $files{$_}{path}   = $File::Find::name )
+            && ( $files{$_}{digest} = md5_base64( read_file($_) ) );
+    }, $dir;
+
+    return \%files;
+}
+
 sub compare_files {
     my ( $files1, $files2, $dir1, $dir2, $verbose ) = @_;
 
@@ -67,25 +88,4 @@ File names match, but contents appear to be different:
   << '$$file_info1{path}'
   >> '$$file_info2{path}'
 EOF
-}
-
-sub verify_dirs {
-    -d $_ or die "Directory '$_' does not exist.\n" for @_;
-}
-
-sub get_files {
-    my ( $dir, $pattern ) = @_;
-
-    my %files;
-
-    find sub {
-        die "Duplicate filename: '$_' at '$files{$_}{path} and $File::Find::name'\n"
-            if exists $files{$_};
-        -f
-            && m/$pattern/i
-            && ( $files{$_}{path}   = $File::Find::name )
-            && ( $files{$_}{digest} = md5_base64( read_file($_) ) );
-    }, $dir;
-
-    return \%files;
 }
