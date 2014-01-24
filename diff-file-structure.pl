@@ -39,8 +39,7 @@ sub compare_files {
     for my $file ( sort @all ) {
         my $result;
         if ( exists $$files1{$file} && exists $$files2{$file} ) {
-            die md5_mismatch( $$files1{$file}{path}, $$files2{$file}{path} )
-                unless $$files1{$file}{digest} eq $$files2{$file}{digest};
+            verify_content_matches( $$files1{$file}, $$files2{$file} );
             $counts{Both}++;
             next;
         }
@@ -60,16 +59,16 @@ sub compare_files {
     say "$_: $counts{$_}" for sort keys %counts;
 }
 
-sub md5_mismatch {
-    my ( $path1, $path2 ) = @_;
+sub verify_content_matches {
+    my ( $file_info1, $file_info2 ) = @_;
 
-    my $error = <<EOF;
+    return if $$file_info1{digest} eq $$file_info2{digest};
+
+    die <<EOF;
 File names match, but contents appear to be different:
-  << '$path1'
-  >> '$path2'
+  << '$$file_info1{path}'
+  >> '$$file_info2{path}'
 EOF
-
-    return $error;
 }
 
 sub verify_dirs {
