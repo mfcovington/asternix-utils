@@ -4,6 +4,8 @@
 #
 # Description:
 #
+# Adapted from: http://stackoverflow.com/a/15214549/996114
+#
 use strict;
 use warnings;
 use autodie;
@@ -12,23 +14,46 @@ use File::Find;
 use List::MoreUtils qw(uniq);
 use Digest::MD5 'md5_base64';
 use File::Slurp;
+use Getopt::Long;
 
-# Adapted from: http://stackoverflow.com/a/15214549/996114
-
-my $dir1    = $ARGV[0] // "test1";
-my $dir2    = $ARGV[1] // "test2";
-my $pattern = $ARGV[2] // "(\\.CR2)|(\\.JPG)\$";
-
+my $pattern       = "(\\.CR2)|(\\.JPG)\$";
 my $check_size    = 1;
 my $check_content = 1;
 my $verbose       = 1;
+my $help;
 
+my $options = GetOptions(
+    "pattern=s" => \$pattern,
+    "size"      => \$check_size,
+    "content"   => \$check_content,
+    "verbose"   => \$verbose,
+    "help"      => \$help,
+);
+
+my $dir1 = $ARGV[0] // "test1";
+my $dir2 = $ARGV[1] // "test2";
+
+usage_statement() if $help;
 verify_dirs( $dir1, $dir2 );
 my $files1 = get_files( $dir1, $pattern, $verbose );
 my $files2 = get_files( $dir2, $pattern, $verbose );
 compare_files( $files1, $files2, $dir1, $dir2, $verbose );
 
 exit;
+
+sub usage_statement {
+    my $usage = <<EOF;
+USAGE:
+  $0 path_to_directory_1 path_to_directory_2 > output_file
+    --pattern  Regular expression to limit comparisons to specific filetypes ["(\\.CR2)|(\\.JPG)\$"]
+    --size     Compare sizes of file pairs
+    --content  Compare content of file pairs
+    --verbose
+    --help
+EOF
+
+    die $usage;
+}
 
 sub verify_dirs {
     -d $_ or die "Directory '$_' does not exist.\n" for @_;
@@ -95,7 +120,7 @@ sub compare_files {
 
 sub verify_size_matches {
     my ( $file_info1, $file_info2 ) = @_;
-say "$$file_info1{size}:$$file_info2{size}";
+
     return if $$file_info1{size} == $$file_info2{size};
 
     die <<EOF;
