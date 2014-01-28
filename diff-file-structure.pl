@@ -16,10 +16,7 @@ use Getopt::Long;
 
 # Adapted from: http://stackoverflow.com/a/15214549/996114
 
-my $dir1    = $ARGV[0] // "test1";
-my $dir2    = $ARGV[1] // "test2";
-my $pattern = "(\\.CR2)|(\\.JPG)\$";
-
+my $pattern       = "(\\.CR2)|(\\.JPG)\$";
 my $check_size    = 1;
 my $check_content = 1;
 my $verbose       = 1;
@@ -30,6 +27,9 @@ my $options = GetOptions(
     "content"   => \$check_content,
     "verbose"   => \$verbose,
 );
+
+my $dir1 = $ARGV[0] // "test1";
+my $dir2 = $ARGV[1] // "test2";
 
 verify_dirs( $dir1, $dir2 );
 my $files1 = get_files( $dir1, $pattern, $verbose );
