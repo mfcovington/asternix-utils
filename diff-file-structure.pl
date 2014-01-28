@@ -18,7 +18,10 @@ use File::Slurp;
 my $dir1    = $ARGV[0] // "test1";
 my $dir2    = $ARGV[1] // "test2";
 my $pattern = $ARGV[2] // "(\\.CR2)|(\\.JPG)\$";
-my $verbose = 1;
+
+my $check_size    = 1;
+my $check_content = 1;
+my $verbose       = 1;
 
 verify_dirs( $dir1, $dir2 );
 my $files1 = get_files( $dir1, $pattern, $verbose );
@@ -44,11 +47,11 @@ sub get_files {
     find sub {
         die "Duplicate filename: '$_' at '$files{$_}{path} and $File::Find::name'\n"
             if exists $files{$_};
-        -f
-            && m/$pattern/i
-            && ( $files{$_}{path}   = $File::Find::name )
-            && ( $files{$_}{digest} = md5_base64( read_file($_) ) );
-        print "  $count files processed\r" if ++$count % 10_000 == 0;
+        return unless -f && m/$pattern/i;
+        $files{$_}{path}   = $File::Find::name;
+        $files{$_}{size}   = -s $_ if $check_size;
+        $files{$_}{digest} = md5_base64( read_file($_) ) if $check_content;
+        print "  $count files processed\r" if ++$count % 2 == 0;
     }, $dir;
 
     say "";
@@ -67,7 +70,10 @@ sub compare_files {
     for my $file ( sort @all ) {
         my $result;
         if ( exists $$files1{$file} && exists $$files2{$file} ) {
-            verify_content_matches( $$files1{$file}, $$files2{$file} );
+            verify_size_matches( $$files1{$file}, $$files2{$file} )
+                if $check_size;
+            verify_content_matches( $$files1{$file}, $$files2{$file} )
+                if $check_content;
             $counts{Both}++;
             next;
         }
@@ -85,6 +91,18 @@ sub compare_files {
     }
 
     say "$_: $counts{$_}" for sort keys %counts;
+}
+
+sub verify_size_matches {
+    my ( $file_info1, $file_info2 ) = @_;
+say "$$file_info1{size}:$$file_info2{size}";
+    return if $$file_info1{size} == $$file_info2{size};
+
+    die <<EOF;
+File names match, but sizes appear to be different:
+  << '$$file_info1{path}' ($$file_info1{size})
+  >> '$$file_info2{path}' ($$file_info2{size})
+EOF
 }
 
 sub verify_content_matches {
