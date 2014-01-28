@@ -49,6 +49,7 @@ sub get_files {
             if exists $files{$_};
         return unless -f && m/$pattern/i;
         $files{$_}{path}   = $File::Find::name;
+        $files{$_}{size}   = -s $_ if $check_size;
         $files{$_}{digest} = md5_base64( read_file($_) ) if $check_content;
         print "  $count files processed\r" if ++$count % 2 == 0;
     }, $dir;
@@ -69,6 +70,8 @@ sub compare_files {
     for my $file ( sort @all ) {
         my $result;
         if ( exists $$files1{$file} && exists $$files2{$file} ) {
+            verify_size_matches( $$files1{$file}, $$files2{$file} )
+                if $check_size;
             verify_content_matches( $$files1{$file}, $$files2{$file} )
                 if $check_content;
             $counts{Both}++;
@@ -88,6 +91,18 @@ sub compare_files {
     }
 
     say "$_: $counts{$_}" for sort keys %counts;
+}
+
+sub verify_size_matches {
+    my ( $file_info1, $file_info2 ) = @_;
+say "$$file_info1{size}:$$file_info2{size}";
+    return if $$file_info1{size} == $$file_info2{size};
+
+    die <<EOF;
+File names match, but sizes appear to be different:
+  << '$$file_info1{path}' ($$file_info1{size})
+  >> '$$file_info2{path}' ($$file_info2{size})
+EOF
 }
 
 sub verify_content_matches {
