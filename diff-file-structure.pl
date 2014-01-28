@@ -4,6 +4,8 @@
 #
 # Description:
 #
+# Adapted from: http://stackoverflow.com/a/15214549/996114
+#
 use strict;
 use warnings;
 use autodie;
@@ -13,8 +15,6 @@ use List::MoreUtils qw(uniq);
 use Digest::MD5 'md5_base64';
 use File::Slurp;
 use Getopt::Long;
-
-# Adapted from: http://stackoverflow.com/a/15214549/996114
 
 my $pattern       = "(\\.CR2)|(\\.JPG)\$";
 my $check_size    = 1;
@@ -120,7 +120,7 @@ sub compare_files {
 
 sub verify_size_matches {
     my ( $file_info1, $file_info2 ) = @_;
-say "$$file_info1{size}:$$file_info2{size}";
+
     return if $$file_info1{size} == $$file_info2{size};
 
     die <<EOF;
