@@ -76,7 +76,7 @@ sub get_files {
         $files{$_}{path}   = $File::Find::name;
         $files{$_}{size}   = -s $_ if $check_size;
         $files{$_}{digest} = md5_base64( read_file($_) ) if $check_content;
-        print "  $count files processed\r" if ++$count % 2 == 0;
+        print "  $count files processed\r" if ++$count % 100 == 0;
     }, $dir;
 
     say "";
