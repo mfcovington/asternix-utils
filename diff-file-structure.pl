@@ -16,11 +16,8 @@ use Digest::MD5 'md5_base64';
 use File::Slurp;
 use Getopt::Long;
 
-my $pattern       = "(\\.CR2)|(\\.JPG)\$";
-my $check_size    = 1;
-my $check_content = 1;
-my $verbose       = 1;
-my $help;
+my $pattern = "(\\.CR2)|(\\.JPG)\$";
+my ( $check_size, $check_content, $verbose, $help );
 
 my $options = GetOptions(
     "pattern=s" => \$pattern,
