@@ -120,7 +120,7 @@ sub verify_size_matches {
 
     return if $$file_info1{size} == $$file_info2{size};
 
-    die <<EOF;
+    say <<EOF;
 File names match, but sizes appear to be different:
   << '$$file_info1{path}' ($$file_info1{size})
   >> '$$file_info2{path}' ($$file_info2{size})
@@ -132,7 +132,7 @@ sub verify_content_matches {
 
     return if $$file_info1{digest} eq $$file_info2{digest};
 
-    die <<EOF;
+    say <<EOF;
 File names match, but contents appear to be different:
   << '$$file_info1{path}'
   >> '$$file_info2{path}'
