@@ -16,11 +16,8 @@ use Digest::MD5 'md5_base64';
 use File::Slurp;
 use Getopt::Long;
 
-my $pattern       = "(\\.CR2)|(\\.JPG)\$";
-my $check_size    = 1;
-my $check_content = 1;
-my $verbose       = 1;
-my $help;
+my $pattern = "(\\.CR2)|(\\.JPG)\$";
+my ( $check_size, $check_content, $verbose, $help );
 
 my $options = GetOptions(
     "pattern=s" => \$pattern,
@@ -76,7 +73,7 @@ sub get_files {
         $files{$_}{path}   = $File::Find::name;
         $files{$_}{size}   = -s $_ if $check_size;
         $files{$_}{digest} = md5_base64( read_file($_) ) if $check_content;
-        print "  $count files processed\r" if ++$count % 2 == 0;
+        print "  $count files processed\r" if ++$count % 100 == 0;
     }, $dir;
 
     say "";
@@ -123,7 +120,7 @@ sub verify_size_matches {
 
     return if $$file_info1{size} == $$file_info2{size};
 
-    die <<EOF;
+    say <<EOF;
 File names match, but sizes appear to be different:
   << '$$file_info1{path}' ($$file_info1{size})
   >> '$$file_info2{path}' ($$file_info2{size})
@@ -135,7 +132,7 @@ sub verify_content_matches {
 
     return if $$file_info1{digest} eq $$file_info2{digest};
 
-    die <<EOF;
+    say <<EOF;
 File names match, but contents appear to be different:
   << '$$file_info1{path}'
   >> '$$file_info2{path}'
